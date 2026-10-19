@@ -12,3 +12,17 @@ VALID_TYPES = ("int", "str", "bool")
 COLUMN_SEPARATOR = ":"
 
 PROMPT_TEXT = ">>>Введите команду: "
+
+QUOTE_CHARS = ("'", '"')
+TRUE_LITERALS = ("true",)
+FALSE_LITERALS = ("false",)
+VALUES_SEPARATOR = ","
+ASSIGNMENT_OPERATOR = "="
+VALUES_OPEN_BRACKET = "("
+VALUES_CLOSE_BRACKET = ")"
+
+KEYWORD_INTO = "into"
+KEYWORD_FROM = "from"
+KEYWORD_VALUES = "values"
+KEYWORD_WHERE = "where"
+KEYWORD_SET = "set"
