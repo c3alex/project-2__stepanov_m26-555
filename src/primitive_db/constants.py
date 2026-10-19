@@ -29,3 +29,17 @@ KEYWORD_SET = "set"
 
 CONFIRM_ANSWER = "y"
 TIME_PRECISION = 3
+
+COMMAND_EXIT = "exit"
+COMMAND_HELP = "help"
+COMMAND_LIST_TABLES = "list_tables"
+COMMAND_CREATE_TABLE = "create_table"
+COMMAND_DROP_TABLE = "drop_table"
+COMMAND_INSERT = "insert"
+COMMAND_SELECT = "select"
+COMMAND_UPDATE = "update"
+COMMAND_DELETE = "delete"
+COMMAND_INFO = "info"
+
+INCORRECT_VALUE_MESSAGE = "Некорректное значение: {value}. Попробуйте снова."
+RECORDS_NOT_FOUND_MESSAGE = "Ошибка: Записи, удовлетворяющие условию, не найдены."

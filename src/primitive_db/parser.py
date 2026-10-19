@@ -3,6 +3,7 @@
 from primitive_db.constants import (
     ASSIGNMENT_OPERATOR,
     FALSE_LITERALS,
+    INCORRECT_VALUE_MESSAGE,
     QUOTE_CHARS,
     TRUE_LITERALS,
     VALUES_CLOSE_BRACKET,
@@ -11,16 +12,16 @@ from primitive_db.constants import (
 )
 
 
-def incorrect_value(value: str) -> ValueError:
+def incorrect_value(value: object) -> ValueError:
     """Создает исключение о некорректном значении.
 
     Args:
-        value: значение, которое не удалось разобрать.
+        value: значение, которое не удалось разобрать или проверить.
 
     Returns:
         Исключение ValueError с сообщением для пользователя.
     """
-    return ValueError(f"Некорректное значение: {value}. Попробуйте снова.")
+    return ValueError(INCORRECT_VALUE_MESSAGE.format(value=value))
 
 
 def split_outside_quotes(text: str, separator: str) -> list[str]:

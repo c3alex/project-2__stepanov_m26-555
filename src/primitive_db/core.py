@@ -13,6 +13,7 @@ from primitive_db.constants import (
     COLUMN_SEPARATOR,
     ID_COLUMN,
     ID_TYPE,
+    RECORDS_NOT_FOUND_MESSAGE,
     VALID_TYPES,
 )
 from primitive_db.decorators import (
@@ -21,20 +22,9 @@ from primitive_db.decorators import (
     handle_db_errors,
     log_time,
 )
+from primitive_db.parser import incorrect_value
 
 select_cache = create_cacher()
-
-
-def incorrect_value(value: object) -> ValueError:
-    """Создает исключение о некорректном значении.
-
-    Args:
-        value: некорректное значение.
-
-    Returns:
-        Исключение ValueError с сообщением для пользователя.
-    """
-    return ValueError(f"Некорректное значение: {value}. Попробуйте снова.")
 
 
 def get_schema(metadata: dict, table_name: str) -> dict[str, str]:
@@ -65,8 +55,7 @@ def format_columns(schema: dict[str, str]) -> str:
         Строка с перечислением столбцов.
     """
     return ", ".join(
-        f"{name}{COLUMN_SEPARATOR}{column_type}"
-        for name, column_type in schema.items()
+        f"{name}{COLUMN_SEPARATOR}{column_type}" for name, column_type in schema.items()
     )
 
 
@@ -181,8 +170,7 @@ def create_table(metadata: dict, table_name: str, columns: list[str]) -> dict:
     schema = parse_columns(columns)
     metadata[table_name] = schema
     print(
-        f'Таблица "{table_name}" успешно создана со столбцами: '
-        f"{format_columns(schema)}"
+        f'Таблица "{table_name}" успешно создана со столбцами: {format_columns(schema)}'
     )
     return metadata
 
@@ -316,7 +304,7 @@ def update(
         raise ValueError(f"Ошибка: Столбец {ID_COLUMN} нельзя изменять.")
     found = filter_records(table_data, where_clause)
     if not found:
-        raise ValueError("Ошибка: Записи, удовлетворяющие условию, не найдены.")
+        raise ValueError(RECORDS_NOT_FOUND_MESSAGE)
     for record in found:
         record.update(set_clause)
         print(
@@ -347,11 +335,11 @@ def delete(table_data: list[dict], where_clause: dict, table_name: str) -> list[
     """
     found = filter_records(table_data, where_clause)
     if not found:
-        raise ValueError("Ошибка: Записи, удовлетворяющие условию, не найдены.")
+        raise ValueError(RECORDS_NOT_FOUND_MESSAGE)
     for record in found:
         table_data.remove(record)
         print(
-            f'Запись с ID={record[ID_COLUMN]} успешно удалена '
+            f"Запись с ID={record[ID_COLUMN]} успешно удалена "
             f'из таблицы "{table_name}".'
         )
     return table_data

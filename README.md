@@ -1,21 +1,43 @@
 # Примитивная база данных
 
-Консольная примитивная база данных на Python. Метаданные таблиц хранятся
-в файле `db_meta.json`.
+Учебный проект: консольная база данных на Python. Поддерживает создание и
+удаление таблиц с типизированными столбцами (`int`, `str`, `bool`), CRUD-операции
+с записями, подтверждение опасных действий и централизованную обработку ошибок.
+Метаданные таблиц хранятся в `db_meta.json`, данные — в `data/<имя_таблицы>.json`.
 
 ## Установка и запуск
+
+Нужны Python 3.12+ и [uv](https://docs.astral.sh/uv/).
 
 ```bash
 make install   # установить зависимости (uv sync)
 make run       # запустить базу данных (uv run database)
+make lint      # проверить код линтером ruff
 ```
 
-Установка пакета, после которой в терминале доступна команда `database`:
+Сборка и установка пакета, после которой в терминале доступна команда `database`:
 
 ```bash
-make build
-make package-install
+make build            # uv build
+make package-install  # uv tool install dist/*.whl
 database
+```
+
+## Демонстрация
+
+[![asciicast](https://asciinema.org/a/ID_ЗАПИСИ.svg)](https://asciinema.org/a/ID_ЗАПИСИ)
+
+## Структура проекта
+
+```text
+src/primitive_db/
+├── main.py        — точка входа
+├── engine.py      — основной цикл и обработка команд
+├── core.py        — логика таблиц и CRUD-операций
+├── parser.py      — разбор values, where и set
+├── utils.py       — работа с файлами метаданных и данных
+├── decorators.py  — декораторы и кэширование
+└── constants.py   — константы
 ```
 
 ## Управление таблицами
