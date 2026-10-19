@@ -14,6 +14,7 @@ from primitive_db.constants import (
     META_FILE,
     PROMPT_TEXT,
 )
+from primitive_db.decorators import handle_db_errors
 from primitive_db.parser import find_keyword, parse_condition, parse_values
 from primitive_db.utils import (
     delete_table_data,
@@ -112,6 +113,7 @@ def print_records(records: list[dict], schema: dict[str, str]) -> None:
     print(table)
 
 
+@handle_db_errors
 def handle_create_table(metadata: dict, args: list[str], user_input: str) -> None:
     """Обрабатывает команду create_table.
 
@@ -125,10 +127,12 @@ def handle_create_table(metadata: dict, args: list[str], user_input: str) -> Non
     """
     if len(args) < 2:
         raise incorrect_command(user_input)
-    core.create_table(metadata, args[1], args[2:])
+    if core.create_table(metadata, args[1], args[2:]) is None:
+        return
     save_metadata(META_FILE, metadata)
 
 
+@handle_db_errors
 def handle_drop_table(metadata: dict, args: list[str], user_input: str) -> None:
     """Обрабатывает команду drop_table.
 
@@ -142,11 +146,14 @@ def handle_drop_table(metadata: dict, args: list[str], user_input: str) -> None:
     """
     if len(args) != 2:
         raise incorrect_command(user_input)
-    core.drop_table(metadata, args[1])
+    core.get_schema(metadata, args[1])
+    if core.drop_table(metadata, args[1]) is None:
+        return
     save_metadata(META_FILE, metadata)
     delete_table_data(args[1])
 
 
+@handle_db_errors
 def handle_insert(metadata: dict, user_input: str) -> None:
     """Обрабатывает команду insert into <таблица> values (...).
 
@@ -167,10 +174,12 @@ def handle_insert(metadata: dict, user_input: str) -> None:
     table_name = parts[2]
     values = parse_values(parts[3][len(KEYWORD_VALUES) :])
     table_data = load_table_data(table_name)
-    core.insert(metadata, table_name, values, table_data)
+    if core.insert(metadata, table_name, values, table_data) is None:
+        return
     save_table_data(table_name, table_data)
 
 
+@handle_db_errors
 def handle_select(metadata: dict, user_input: str) -> None:
     """Обрабатывает команду select from <таблица> [where <условие>].
 
@@ -194,9 +203,12 @@ def handle_select(metadata: dict, user_input: str) -> None:
     if where_clause:
         core.validate_clause(schema, where_clause)
     records = core.select(load_table_data(table_name), where_clause)
+    if records is None:
+        return
     print_records(records, schema)
 
 
+@handle_db_errors
 def handle_update(metadata: dict, user_input: str) -> None:
     """Обрабатывает команду update <таблица> set ... where ....
 
@@ -217,10 +229,12 @@ def handle_update(metadata: dict, user_input: str) -> None:
     core.validate_clause(schema, set_clause)
     core.validate_clause(schema, where_clause)
     table_data = load_table_data(table_name)
-    core.update(table_data, set_clause, where_clause, table_name)
+    if core.update(table_data, set_clause, where_clause, table_name) is None:
+        return
     save_table_data(table_name, table_data)
 
 
+@handle_db_errors
 def handle_delete(metadata: dict, user_input: str) -> None:
     """Обрабатывает команду delete from <таблица> where <условие>.
 
@@ -241,10 +255,14 @@ def handle_delete(metadata: dict, user_input: str) -> None:
     schema = core.get_schema(metadata, table_name)
     core.validate_clause(schema, where_clause)
     table_data = load_table_data(table_name)
-    core.delete(table_data, where_clause, table_name)
+    if not core.filter_records(table_data, where_clause):
+        raise ValueError("Ошибка: Записи, удовлетворяющие условию, не найдены.")
+    if core.delete(table_data, where_clause, table_name) is None:
+        return
     save_table_data(table_name, table_data)
 
 
+@handle_db_errors
 def handle_info(metadata: dict, args: list[str], user_input: str) -> None:
     """Обрабатывает команду info <таблица>.
 
@@ -277,34 +295,29 @@ def execute_command(metadata: dict, user_input: str) -> bool:
         args = user_input.split()
     command = args[0].lower()
 
-    try:
-        match command:
-            case "exit":
-                return False
-            case "help":
-                print_help()
-            case "list_tables":
-                core.list_tables(metadata)
-            case "create_table":
-                handle_create_table(metadata, args, user_input)
-            case "drop_table":
-                handle_drop_table(metadata, args, user_input)
-            case "insert":
-                handle_insert(metadata, user_input)
-            case "select":
-                handle_select(metadata, user_input)
-            case "update":
-                handle_update(metadata, user_input)
-            case "delete":
-                handle_delete(metadata, user_input)
-            case "info":
-                handle_info(metadata, args, user_input)
-            case _:
-                print(f"Функции {args[0]} нет. Попробуйте снова.")
-    except KeyError as error:
-        print(f"Ошибка: {error.args[0]}")
-    except ValueError as error:
-        print(error)
+    match command:
+        case "exit":
+            return False
+        case "help":
+            print_help()
+        case "list_tables":
+            core.list_tables(metadata)
+        case "create_table":
+            handle_create_table(metadata, args, user_input)
+        case "drop_table":
+            handle_drop_table(metadata, args, user_input)
+        case "insert":
+            handle_insert(metadata, user_input)
+        case "select":
+            handle_select(metadata, user_input)
+        case "update":
+            handle_update(metadata, user_input)
+        case "delete":
+            handle_delete(metadata, user_input)
+        case "info":
+            handle_info(metadata, args, user_input)
+        case _:
+            print(f"Функции {args[0]} нет. Попробуйте снова.")
     return True
 
 

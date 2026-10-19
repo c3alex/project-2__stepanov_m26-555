@@ -3,7 +3,11 @@
 Функции модуля сообщают об ошибках исключениями: ValueError — при
 некорректных значениях, KeyError — при обращении к несуществующей
 таблице или столбцу. Сообщение исключения предназначено для пользователя.
+Публичные операции обернуты декоратором handle_db_errors: он выводит
+сообщение об ошибке и возвращает None.
 """
+
+import json
 
 from primitive_db.constants import (
     COLUMN_SEPARATOR,
@@ -11,6 +15,14 @@ from primitive_db.constants import (
     ID_TYPE,
     VALID_TYPES,
 )
+from primitive_db.decorators import (
+    confirm_action,
+    create_cacher,
+    handle_db_errors,
+    log_time,
+)
+
+select_cache = create_cacher()
 
 
 def incorrect_value(value: object) -> ValueError:
@@ -129,6 +141,20 @@ def matches(record: dict, where_clause: dict | None) -> bool:
     return all(record.get(column) == value for column, value in where_clause.items())
 
 
+def filter_records(table_data: list[dict], where_clause: dict | None) -> list[dict]:
+    """Возвращает записи таблицы, подходящие под условие (без кэша).
+
+    Args:
+        table_data: записи таблицы.
+        where_clause: условие {столбец: значение} или None.
+
+    Returns:
+        Список подходящих записей (ссылки на записи table_data).
+    """
+    return [record for record in table_data if matches(record, where_clause)]
+
+
+@handle_db_errors
 def create_table(metadata: dict, table_name: str, columns: list[str]) -> dict:
     """Создает новую таблицу в метаданных.
 
@@ -161,6 +187,8 @@ def create_table(metadata: dict, table_name: str, columns: list[str]) -> dict:
     return metadata
 
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata: dict, table_name: str) -> dict:
     """Удаляет таблицу из метаданных.
 
@@ -199,6 +227,8 @@ def list_tables(metadata: dict) -> None:
         print(f"- {table_name}")
 
 
+@handle_db_errors
+@log_time
 def insert(
     metadata: dict, table_name: str, values: list, table_data: list[dict]
 ) -> list[dict]:
@@ -239,8 +269,12 @@ def insert(
     return table_data
 
 
+@handle_db_errors
+@log_time
 def select(table_data: list[dict], where_clause: dict | None = None) -> list[dict]:
     """Выбирает записи таблицы.
+
+    Результаты одинаковых запросов к одинаковым данным кэшируются.
 
     Args:
         table_data: записи таблицы.
@@ -248,11 +282,16 @@ def select(table_data: list[dict], where_clause: dict | None = None) -> list[dic
             возвращаются все записи.
 
     Returns:
-        Список подходящих записей.
+        Список копий подходящих записей.
     """
-    return [record for record in table_data if matches(record, where_clause)]
+    cache_key = json.dumps([table_data, where_clause], sort_keys=True)
+    return select_cache(
+        cache_key,
+        lambda: [dict(record) for record in filter_records(table_data, where_clause)],
+    )
 
 
+@handle_db_errors
 def update(
     table_data: list[dict], set_clause: dict, where_clause: dict, table_name: str
 ) -> list[dict]:
@@ -275,7 +314,7 @@ def update(
     """
     if ID_COLUMN in set_clause:
         raise ValueError(f"Ошибка: Столбец {ID_COLUMN} нельзя изменять.")
-    found = select(table_data, where_clause)
+    found = filter_records(table_data, where_clause)
     if not found:
         raise ValueError("Ошибка: Записи, удовлетворяющие условию, не найдены.")
     for record in found:
@@ -287,6 +326,8 @@ def update(
     return table_data
 
 
+@handle_db_errors
+@confirm_action("удаление записи")
 def delete(table_data: list[dict], where_clause: dict, table_name: str) -> list[dict]:
     """Удаляет записи, подходящие под условие.
 
@@ -304,7 +345,7 @@ def delete(table_data: list[dict], where_clause: dict, table_name: str) -> list[
     Side effects:
         Изменяет table_data и выводит сообщения в консоль.
     """
-    found = select(table_data, where_clause)
+    found = filter_records(table_data, where_clause)
     if not found:
         raise ValueError("Ошибка: Записи, удовлетворяющие условию, не найдены.")
     for record in found:
@@ -316,6 +357,7 @@ def delete(table_data: list[dict], where_clause: dict, table_name: str) -> list[
     return table_data
 
 
+@handle_db_errors
 def info(metadata: dict, table_name: str, table_data: list[dict]) -> None:
     """Выводит информацию о таблице.
 
