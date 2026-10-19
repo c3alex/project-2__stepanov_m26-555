@@ -1,7 +1,7 @@
 [project]
 name = "primitive-db"
 version = "0.1.0"
-description = "Add your description here"
+description = "Примитивная база данных с консольным интерфейсом"
 readme = "README.md"
 authors = [
     { name = "Stepanov Alexandr", email = "36171529+c3alex@users.noreply.github.com" }
@@ -10,8 +10,20 @@ requires-python = ">=3.12"
 dependencies = []
 
 [project.scripts]
-primitive-db = "primitive_db:main"
+database = "primitive_db.main:main"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.1",
+]

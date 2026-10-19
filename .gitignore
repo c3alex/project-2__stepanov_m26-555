@@ -8,3 +8,16 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Tool caches
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# Database files
+db_meta.json
+data/
+
+# Task descriptions
+task_*.md
