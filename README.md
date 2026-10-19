@@ -25,7 +25,7 @@ database
 
 ## Демонстрация
 
-[![asciicast](https://asciinema.org/a/ID_ЗАПИСИ.svg)](https://asciinema.org/a/ID_ЗАПИСИ)
+[![asciicast](https://asciinema.org/a/UchCFXCPq0khDAbx.svg)](https://asciinema.org/a/UchCFXCPq0khDAbx)
 
 ## Структура проекта
 
