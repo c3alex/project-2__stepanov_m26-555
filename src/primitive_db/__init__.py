@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from primitive-db!")
+"""Примитивная база данных с консольным интерфейсом."""
